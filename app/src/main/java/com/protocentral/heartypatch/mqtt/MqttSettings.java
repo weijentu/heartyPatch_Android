@@ -12,7 +12,7 @@ public class MqttSettings {
 
     // Constants
     public final static int kDefaultServerPort = 1883;
-    public final static String kDefaultServerAddress = "io.adafruit.com";
+    public final static String kDefaultServerAddress = "mqtt.noteart.app";
     public final static String kDefaultPublishTopicTx = null;//"uart_tx";
     public final static String kDefaultPublishTopicRx = null;//"uart_rx";
     public final static String kDefaultSubscribeTopic = null;//"uart_input";
@@ -96,7 +96,7 @@ public class MqttSettings {
     }
 
     public boolean isSubscribeEnabled() {
-        return getPrefsBoolean(kPreferences_subscribeenabled, true);
+        return getPrefsBoolean(kPreferences_subscribeenabled, false);
     }
     public void setSubscribeEnabled(boolean enabled) {
         setPrefsBoolean(kPreferences_subscribeenabled, enabled);
@@ -144,7 +144,7 @@ public class MqttSettings {
 
 
     public String getUsername() {
-        return getPrefsString(kPreferences_username, null);
+        return getPrefsString(kPreferences_username, "wisdomaic");
     }
 
     public void setUsername(String username) {
@@ -152,7 +152,7 @@ public class MqttSettings {
     }
 
     public String getPassword() {
-        return getPrefsString(kPreferences_password, null);
+        return getPrefsString(kPreferences_password, "happy2018");
     }
 
     public void setPassword(String password) {

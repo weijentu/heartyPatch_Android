@@ -40,6 +40,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -149,6 +150,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Disable screen timeout
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // Init variables
         mBleManager = BleManager.getInstance(this);

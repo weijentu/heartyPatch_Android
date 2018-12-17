@@ -35,11 +35,16 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.protocentral.heartypatch.R;
 import com.protocentral.heartypatch.ble.BleManager;
 import com.protocentral.heartypatch.ble.BleUtils;
 import com.protocentral.heartypatch.ble.KnownUUIDs;
+import com.protocentral.heartypatch.mqtt.MqttManager;
+import com.protocentral.heartypatch.mqtt.MqttSettings;
 import com.protocentral.heartypatch.mqtt.MqttSettingsActivity;
 import com.protocentral.heartypatch.ui.utils.ExpandableHeightListView;
 
@@ -109,6 +114,7 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
     private BufferedWriter logFile;
     private boolean recordingLog = false;
     private TextView dispFilename;
+    private Button buttonToggle;
     private Button buttonMQTTSettings;
 
     @Override
@@ -176,6 +182,25 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
             }
         });
         dispFilename = (TextView) findViewById(R.id.textFilename);
+
+        // UI - Connect
+        buttonToggle = (Button) findViewById(R.id.toggleButton);
+        buttonToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Connect / Disconnect
+                Context context = InfoActivity.this;
+                MqttManager mqttManager = MqttManager.getInstance(context);
+                MqttManager.MqqtConnectionStatus status = mqttManager.getClientStatus();
+                Log.d(TAG, "current mqtt status: " + status);
+                if (status == MqttManager.MqqtConnectionStatus.DISCONNECTED || status == MqttManager.MqqtConnectionStatus.NONE || status == MqttManager.MqqtConnectionStatus.ERROR) {
+                    mqttManager.connectFromSavedSettings(context);
+                } else {
+                    mqttManager.disconnect();
+                    MqttSettings.getInstance(context).setConnectedEnabled(false);
+                }
+            }
+        });
 
         buttonMQTTSettings = (Button) findViewById(R.id.buttonMQTTSettings);
         buttonMQTTSettings.setOnClickListener(new View.OnClickListener() {
@@ -539,6 +564,37 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
         //HRTextView.setText(data.toString());//device.getName());
         //HRTextView.setVisibility(isNameDefined ? View.VISIBLE : View.GONE);
 
+        final String arrhythmia = (globalArrDetect == 0xff) ? "Abnormal" : "Normal";
+        final String RR = String.format("%d", globalRR);
+        final String battery = String.format("%d", globalBattery);
+        final String mean = String.format("%.0f", (globalMean/100));
+        final String SDNN = String.format("%.1f", (globalSDNN/100));
+        final String PNN = String.format("%.1f", (globalPNN/100));
+        final String RMSSD = String.format("%.1f", (globalRMSSD/100));
+
+        Context context = InfoActivity.this;
+        MqttManager mqttManager = MqttManager.getInstance(context);
+        if (mqttManager.getClientStatus() == MqttManager.MqqtConnectionStatus.CONNECTED) {
+            try {
+                JSONObject jsonObj = new JSONObject();
+                jsonObj.put("battery", battery);
+                jsonObj.put("HR", globalHR);
+                jsonObj.put("RR", RR);
+                jsonObj.put("mean", mean);
+                jsonObj.put("SDNN", SDNN);
+                jsonObj.put("PNN", PNN);
+                jsonObj.put("RMSSD", RMSSD);
+                jsonObj.put("Arrhythmia", arrhythmia);
+
+                String topic = "HeartyPatch";
+                String payload = jsonObj.toString();
+                // Log.d("Mqtt: ", payload);
+                mqttManager.publish("HeartyPatch", payload, 0);
+            } catch(JSONException ex) {
+                ex.printStackTrace();
+            }
+        }
+
         // Update UI
         runOnUiThread(new Runnable() {
             @Override
@@ -547,40 +603,33 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
                 updateUI();
 
                 TextView HRTextView = (TextView) findViewById(R.id.HRTextView);
-                HRTextView.setText( String.format("%d",globalRR));
+                HRTextView.setText(RR);
 
                 TextView ArrTextView = (TextView) findViewById(R.id.txtRhythm);
-
-                if(globalArrDetect==0xff) {
-                    ArrTextView.setText("Abnormal");
-                } else
-                {
-                    ArrTextView.setText("Normal");
-                }
+                ArrTextView.setText(arrhythmia);
 
                 TextView BatteryTextView = (TextView) findViewById(R.id.BatteryTextView);
-                BatteryTextView.setText( String.format("%d",globalBattery));
+                BatteryTextView.setText(battery);
 
                 TextView MeanRRTextView = (TextView) findViewById(R.id.MeanRRTextView);
-                MeanRRTextView.setText( String.format("%.0f",(globalMean/100)));
+                MeanRRTextView.setText(mean);
 
                 TextView SDNNTextView = (TextView) findViewById(R.id.SDNNTextView);
-                SDNNTextView.setText( String.format("%.1f",(globalSDNN/100)));
+                SDNNTextView.setText(SDNN);
 
                 TextView PNNTextView = (TextView) findViewById(R.id.PNNTextView);
-                PNNTextView.setText( String.format("%.1f",(globalPNN/100)));
+                PNNTextView.setText(PNN);
 
                 TextView RMSSDTextView = (TextView) findViewById(R.id.RMSSDTextView);
-                RMSSDTextView.setText( String.format("%.1f",(globalRMSSD/100)));
+                RMSSDTextView.setText(RMSSD);
 
                 TextView PositionTextView = (TextView) findViewById(R.id.textPosition);
-                PositionTextView.setText( String.format("Position: %d",(globalPosition)));
+                PositionTextView.setText(String.format("Position: %d", (globalPosition)));
 
                 if(recordingLog==true)
                 {
                     writeLog("", new float[] {globalRR, (globalMean/100),(globalSDNN/100), (globalPNN/100), (globalRMSSD/100)});
                 }
-
             }
         });
     }

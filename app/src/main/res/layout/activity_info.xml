@@ -293,7 +293,8 @@
                 android:textColor="@android:color/background_light"
                 android:textOff="OFF"
                 android:textOn="ON"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:visibility="invisible" />
 
             <TextView
                 android:id="@+id/textFilename"
@@ -303,7 +304,8 @@
                 android:text="Logging not started"
                 android:textAlignment="center"
                 android:textColor="@android:color/background_light"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:visibility="invisible" />
         </LinearLayout>
 
         <LinearLayout
@@ -342,7 +344,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="MQTT Settings" />
+                android:text="MQTT Settings"
+                android:visibility="invisible" />
 
             <TextView
                 android:id="@+id/textMQTTStatus"
@@ -352,7 +355,8 @@
                 android:text="Not Connected"
                 android:textAlignment="center"
                 android:textColor="@android:color/background_light"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:visibility="invisible" />
         </LinearLayout>
 
     </LinearLayout>
