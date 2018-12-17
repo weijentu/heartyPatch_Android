@@ -8,22 +8,27 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.Switch;
@@ -107,6 +112,7 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
     private int globalArrDetect=0;
     private float globalRMSSD=0;
     private int globalPosition=0;
+    private String globalUsername = "用户名";
 
     private LineGraphSeries<DataPoint> HRseries;
     private int lineplotxcount=0;
@@ -115,12 +121,16 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
     private boolean recordingLog = false;
     private TextView dispFilename;
     private Button buttonToggle;
-    private Button buttonMQTTSettings;
+    private Button buttonUsername;
+    // private Button buttonMQTTSettings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_info);
+
+        // Disable screen timeout
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mBleManager = BleManager.getInstance(this);
 
@@ -202,19 +212,55 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
             }
         });
 
-        buttonMQTTSettings = (Button) findViewById(R.id.buttonMQTTSettings);
-        buttonMQTTSettings.setOnClickListener(new View.OnClickListener() {
+        final Context context = InfoActivity.this;
+        buttonUsername = (Button) findViewById(R.id.buttonUsername);
+        buttonUsername.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Dismiss keyboard
-                Context context = InfoActivity.this;
-                dismissKeyboard(v);
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setTitle("请输入用户名");
 
-                Intent intent = new Intent(InfoActivity.this, MqttSettingsActivity.class);
-                startActivityForResult(intent, kActivityRequestCode_MqttSettingsActivity);
+                // Set up the input
+                final EditText input = new EditText(context);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        globalUsername = input.getText().toString();
+
+                        TextView PositionTextView = (TextView) findViewById(R.id.textUsername);
+                        PositionTextView.setText(String.format("用户：%s", (globalUsername)));
+                    }
+                });
+
+                builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
 
             }
         });
+
+//        buttonMQTTSettings = (Button) findViewById(R.id.buttonMQTTSettings);
+//        buttonMQTTSettings.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                // Dismiss keyboard
+//                Context context = InfoActivity.this;
+//                dismissKeyboard(v);
+//
+//                Intent intent = new Intent(InfoActivity.this, MqttSettingsActivity.class);
+//                startActivityForResult(intent, kActivityRequestCode_MqttSettingsActivity);
+//
+//            }
+//        });
     }
 
     @Override
@@ -564,27 +610,21 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
         //HRTextView.setText(data.toString());//device.getName());
         //HRTextView.setVisibility(isNameDefined ? View.VISIBLE : View.GONE);
 
-        final String arrhythmia = (globalArrDetect == 0xff) ? "Abnormal" : "Normal";
-        final String RR = String.format("%d", globalRR);
-        final String battery = String.format("%d", globalBattery);
-        final String mean = String.format("%.0f", (globalMean/100));
-        final String SDNN = String.format("%.1f", (globalSDNN/100));
-        final String PNN = String.format("%.1f", (globalPNN/100));
-        final String RMSSD = String.format("%.1f", (globalRMSSD/100));
-
+        final String arrhythmia = (globalArrDetect == 0xff) ? "异常" : "正常";
         Context context = InfoActivity.this;
         MqttManager mqttManager = MqttManager.getInstance(context);
         if (mqttManager.getClientStatus() == MqttManager.MqqtConnectionStatus.CONNECTED) {
             try {
                 JSONObject jsonObj = new JSONObject();
-                jsonObj.put("battery", battery);
-                jsonObj.put("HR", globalHR);
-                jsonObj.put("RR", RR);
-                jsonObj.put("mean", mean);
-                jsonObj.put("SDNN", SDNN);
-                jsonObj.put("PNN", PNN);
-                jsonObj.put("RMSSD", RMSSD);
-                jsonObj.put("Arrhythmia", arrhythmia);
+                jsonObj.put("username", globalUsername);
+                jsonObj.put("battery", globalBattery);
+                jsonObj.put("hr", globalHR);
+                jsonObj.put("rr", globalRR);
+                jsonObj.put("mean", (globalMean/100));
+                jsonObj.put("sdnn", (globalSDNN/100));
+                jsonObj.put("pnn", (globalPNN/100));
+                jsonObj.put("rmssd", (globalRMSSD/100));
+                jsonObj.put("arrhythmia", arrhythmia);
 
                 String topic = "HeartyPatch";
                 String payload = jsonObj.toString();
@@ -601,6 +641,13 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
             public void run()
             {
                 updateUI();
+
+                final String RR = String.format("%d", globalRR);
+                final String battery = String.format("%d", globalBattery);
+                final String mean = String.format("%.0f", (globalMean/100));
+                final String SDNN = String.format("%.1f", (globalSDNN/100));
+                final String PNN = String.format("%.1f", (globalPNN/100));
+                final String RMSSD = String.format("%.1f", (globalRMSSD/100));
 
                 TextView HRTextView = (TextView) findViewById(R.id.HRTextView);
                 HRTextView.setText(RR);
@@ -623,8 +670,8 @@ public class InfoActivity extends AppCompatActivity implements BleManager.BleMan
                 TextView RMSSDTextView = (TextView) findViewById(R.id.RMSSDTextView);
                 RMSSDTextView.setText(RMSSD);
 
-                TextView PositionTextView = (TextView) findViewById(R.id.textPosition);
-                PositionTextView.setText(String.format("Position: %d", (globalPosition)));
+//                TextView PositionTextView = (TextView) findViewById(R.id.textPosition);
+//                PositionTextView.setText(String.format("Position: %d", (globalPosition)));
 
                 if(recordingLog==true)
                 {

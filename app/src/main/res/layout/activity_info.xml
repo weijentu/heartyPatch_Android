@@ -273,12 +273,22 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
 
+            <!--<TextView-->
+                <!--android:id="@+id/textPosition"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_weight="1"-->
+                <!--android:text="Position: -&#45;&#45;"-->
+                <!--android:textAlignment="center"-->
+                <!--android:textColor="@android:color/background_light"-->
+                <!--android:textSize="24sp" />-->
+
             <TextView
-                android:id="@+id/textPosition"
+                android:id="@+id/textUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Position: ---"
+                android:text="用户： ------"
                 android:textAlignment="center"
                 android:textColor="@android:color/background_light"
                 android:textSize="24sp" />
@@ -339,13 +349,20 @@
                 android:textOn="MQTT On"
                 tools:text="MQTT" />
 
+            <!--<Button-->
+                <!--android:id="@+id/buttonMQTTSettings"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_weight="1"-->
+                <!--android:text="MQTT Settings"-->
+                <!--android:visibility="invisible" />-->
+
             <Button
-                android:id="@+id/buttonMQTTSettings"
+                android:id="@+id/buttonUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="MQTT Settings"
-                android:visibility="invisible" />
+                android:text="输入用户名" />
 
             <TextView
                 android:id="@+id/textMQTTStatus"
